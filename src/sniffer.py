@@ -6,9 +6,6 @@ import time
 
 from cmd_parser import configure_parser
 from protocols.ethernet import EthernetPacket
-from protocols.ip import ETH_TYPE_IP
-from protocols.tcp import TcpPacket
-from protocols.udp import UdpPacket
 
 ETH_P_ALL = 0x0003  # Захватывать все пакеты
 
@@ -63,12 +60,6 @@ def write_packet_to_pcap(pcap_file, packet, ts_sec, ts_usec):
     pcap_file.write(
         struct.pack('IIII', ts_sec, ts_usec, len(packet), len(packet)))
     pcap_file.write(packet)
-
-
-def format_mac_addr(mac_addr):
-    # Форматируем MAC-адрес в виде AA:BB:CC:DD:EE:FF
-    formatted_mac = ':'.join('{:02x}'.format(byte) for byte in mac_addr)
-    return formatted_mac
 
 
 if __name__ == '__main__':
