@@ -4,18 +4,29 @@ import struct
 import socket
 import time
 
+from cmd_parser import configure_parser
+from protocols.ethernet import EthernetPacket
+from protocols.ip import ETH_TYPE_IP
+from protocols.tcp import TcpPacket
+from protocols.udp import UdpPacket
+
 ETH_P_ALL = 0x0003  # Захватывать все пакеты
-ETH_TYPE_IP = 0x0800  # Тип пакета IP
 
 
 def main():
+    parser = configure_parser()
+    args = parser.parse_args()
+    sniff(args.interface, args.verbose)
+
+def sniff(interface, verbose):
     # Создаем RAW сокет для захвата пакетов
     sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW,
                          socket.htons(ETH_P_ALL))
 
     # Открываем файл pcap для записи
     pcap_file = open('capture.pcap', 'wb')
-
+    if interface != 'any':
+        sock.bind((interface, 0))
     # Записываем файл заголовка pcap
     write_pcap_file_header(pcap_file)
 
@@ -24,17 +35,16 @@ def main():
             # Захватываем пакеты
             packet, _ = sock.recvfrom(65535)
 
-            # Парсим заголовок Ethernet
-            eth_header = struct.unpack('!6s6sH', packet[:14])
-            source_mac = format_mac_addr(eth_header[0])
-            dest_mac = format_mac_addr(eth_header[1])
-            ether_type = socket.ntohs(eth_header[2])
+            timestamp = time.time()
+            ts_sec = int(timestamp)
+            ts_usec = int((timestamp - ts_sec) * 1000000)
+
+            eth_packet = EthernetPacket()
+            eth_packet.parse(packet)
+            eth_packet.show(ts_sec, ts_usec, verbose)
 
             # Записываем пакет в pcap файл
-            write_packet_to_pcap(pcap_file, packet)
-
-            # Выводим информацию о пакете
-            print(f"Source MAC: {source_mac}, Destination MAC: {dest_mac}")
+            write_packet_to_pcap(pcap_file, packet, ts_sec, ts_usec)
 
     except KeyboardInterrupt:
         # Закрываем файл при остановке программы
@@ -48,15 +58,10 @@ def write_pcap_file_header(pcap_file):
     pcap_file.write(struct.pack('IHHIIII', 0xa1b2c3d4, 2, 4, 0, 0, 65535, 1))
 
 
-def write_packet_to_pcap(pcap_file, packet):
-    # Получаем время захвата пакета
-    timestamp = time.time()
-    seconds = int(timestamp)
-    microseconds = int((timestamp - seconds) * 1000000)
-
+def write_packet_to_pcap(pcap_file, packet, ts_sec, ts_usec):
     # Записываем заголовок пакета в pcap файл
     pcap_file.write(
-        struct.pack('IIII', seconds, microseconds, len(packet), len(packet)))
+        struct.pack('IIII', ts_sec, ts_usec, len(packet), len(packet)))
     pcap_file.write(packet)
 
 
