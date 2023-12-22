@@ -4,12 +4,12 @@ from .raw import RawPacket
 
 class UdpPacket:
     def __init__(self, source_port=None, destination_port=None, length=None,
-                 checksum=None, payload=None):
+                 checksum=None, higher_level_packet=None):
         self.src_port = source_port
         self.dst_port = destination_port
         self.length = length
         self.checksum = checksum
-        self.higher_level_packet = payload
+        self.higher_level_packet = higher_level_packet
         self.name = 'UDP'
 
     def parse(self, packet):
@@ -22,7 +22,7 @@ class UdpPacket:
 
     def show(self, level):
         level_padding = '  ' * level
-        print(f"{level_padding}Src Port: {self.src_port}, "
+        print(f"{level_padding}{self.name}, Src Port: {self.src_port}, "
               f"Dst Port: {self.dst_port}, Length: {self.length}, "
               f"Checksum: {self.checksum}")
         if not self.higher_level_packet:

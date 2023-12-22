@@ -38,7 +38,7 @@ def sniff(interface, verbose):
 
             eth_packet = EthernetPacket()
             eth_packet.parse(packet)
-            eth_packet.show(ts_sec, ts_usec, verbose)
+            eth_packet.show(ts_sec, verbose)
 
             # Записываем пакет в pcap файл
             write_packet_to_pcap(pcap_file, packet, ts_sec, ts_usec)

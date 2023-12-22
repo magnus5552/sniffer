@@ -1,5 +1,6 @@
 import socket
 import struct
+from datetime import datetime
 
 from .tcp import TcpPacket
 from .udp import UdpPacket
@@ -8,16 +9,55 @@ from .udp import UdpPacket
 ETH_TYPE_IP = 0x0008  # Тип пакета IP
 
 
-class IpPacket:
-    def __init__(self, version=None, ihl=None, ttl=None, protocol=None,
-                 src_ip=None, dst_ip=None, higher_level_protocol=None):
+class BaseIPPacket:
+    def __init__(self, version=None, src_ip=None, dst_ip=None,
+                 higher_level_packet=None):
         self.version = version
+        self.src_ip = src_ip
+        self.dst_ip = dst_ip
+        self.higher_level_packet = higher_level_packet
+
+    def check_higher_level_protocol(self, packet_data, protocol):
+        if protocol == socket.IPPROTO_TCP:
+            tcp_packet = TcpPacket()
+            tcp_packet.parse(packet_data)
+            self.higher_level_packet = tcp_packet
+        elif protocol == socket.IPPROTO_UDP:
+            udp_packet = UdpPacket()
+            udp_packet.parse(packet_data)
+            self.higher_level_packet = udp_packet
+
+    def show(self, ts_sec, level, verbose):
+        level_padding = '  ' * level
+
+        date = datetime.fromtimestamp(ts_sec)
+        date_str = date.strftime('%H:%M:%S')
+
+        src_ip = self.src_ip
+        dst_ip = self.dst_ip
+        if self.higher_level_packet:
+            src_ip += f'.{self.higher_level_packet.src_port}:'
+            dst_ip += f'.{self.higher_level_packet.dst_port}:'
+
+        print(f"{level_padding}{date_str} "
+              f"IPv{self.version} {src_ip} > {dst_ip} ", end='')
+
+        if not self.higher_level_packet:
+            print()
+            return
+        print(f"{self.higher_level_packet.name}, "
+              f"length {self.higher_level_packet.length}")
+        if verbose:
+            self.higher_level_packet.show(level + 1)
+
+
+class IpPacket(BaseIPPacket):
+    def __init__(self, version=None, ihl=None, ttl=None, protocol=None,
+                 src_ip=None, dst_ip=None, higher_level_packet=None):
+        super().__init__(version, src_ip, dst_ip, higher_level_packet)
         self.ihl = ihl
         self.ttl = ttl
         self.protocol = protocol
-        self.src_ip = src_ip
-        self.dst_ip = dst_ip
-        self.higher_level_packet = higher_level_protocol
         self.name = 'IP'
 
     def parse(self, packet):
@@ -31,26 +71,29 @@ class IpPacket:
         self.src_ip = socket.inet_ntoa(ip_header[8])
         self.dst_ip = socket.inet_ntoa(ip_header[9])
 
+        self.check_higher_level_protocol(packet[self.ihl:], self.protocol)
 
-        self.check_higher_level_protocol(packet[self.ihl:])
 
-    def check_higher_level_protocol(self, packet_data):
-        if self.protocol == socket.IPPROTO_TCP:
-            tcp_packet = TcpPacket()
-            tcp_packet.parse(packet_data)
-            self.higher_level_packet = tcp_packet
-        elif self.protocol == socket.IPPROTO_UDP:
-            udp_packet = UdpPacket()
-            udp_packet.parse(packet_data)
-            self.higher_level_packet = udp_packet
+class Ipv6Packet(BaseIPPacket):
+    def __init__(self, version=None, traffic_class=None, flow_label=None,
+                 payload_length=None, next_header=None, hop_limit=None,
+                 src_ip=None, dst_ip=None, higher_level_packet=None):
+        super().__init__(version, src_ip, dst_ip, higher_level_packet)
+        self.traffic_class = traffic_class
+        self.flow_label = flow_label
+        self.payload_length = payload_length
+        self.next_header = next_header
+        self.hop_limit = hop_limit
 
-    def show(self, ts_sec, ts_usec, level, verbose):
-        level_padding = '  ' * level
-        print(f"{level_padding}{ts_sec}:{ts_usec} "
-              f"IP {self.src_ip} > {self.dst_ip}: ", end='')
-        if not self.higher_level_packet:
-            return
-        print(f"{self.higher_level_packet.name}, "
-              f"length {self.higher_level_packet.length}")
-        if verbose:
-            self.higher_level_packet.show(level + 1)
+
+    def parse(self, packet_data):
+        version_tc_flow = struct.unpack('!I', packet_data[:4])[0]
+        self.version = (version_tc_flow >> 28) & 0x0F
+        self.traffic_class = (version_tc_flow >> 20) & 0xFF
+        self.flow_label = version_tc_flow & 0xFFFFF
+
+        self.payload_length, self.next_header, self.hop_limit = struct.unpack(
+            '!HxB', packet_data[4:8])
+        self.src_ip = socket.inet_ntop(socket.AF_INET6, packet_data[8:24])
+        self.dst_ip = socket.inet_ntop(socket.AF_INET6, packet_data[24:40])
+        self.check_higher_level_protocol(packet_data[40:], self.next_header)

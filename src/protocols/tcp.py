@@ -6,7 +6,7 @@ class TcpPacket:
     def __init__(self, source_port=None, destination_port=None,
                  sequence_number=None, acknowledgment_number=None,
                  data_offset=None, flags=None, window=None, checksum=None,
-                 urgent_pointer=None, payload=None, length=None):
+                 urgent_pointer=None, higher_level_packet=None, length=None):
         self.src_port = source_port
         self.dst_port = destination_port
         self.seq_num = sequence_number
@@ -16,7 +16,7 @@ class TcpPacket:
         self.window = window
         self.checksum = checksum
         self.urgent = urgent_pointer
-        self.higher_level_packet = payload
+        self.higher_level_packet = higher_level_packet
         self.name = 'TCP'
         self.length = length
 
@@ -37,7 +37,7 @@ class TcpPacket:
     def show(self, level):
         level_padding = '  ' * level
         print(
-            f"{level_padding}Src Port: {self.src_port}, "
+            f"{level_padding}{self.name}, Src Port: {self.src_port}, "
             f"Dst Port: {self.dst_port}, Seq: {self.seq_num}, "
             f"Ack: {self.ack_num}, Len: {self.length}")
         print(

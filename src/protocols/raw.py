@@ -23,7 +23,8 @@ class RawPacket:
                     ascii_repr += ascii_char
                 else:
                     ascii_repr += '.'
-            padding = '  ' * (40 - len(formatted_line))
+            padding = ' ' * (40 - len(formatted_line))
             level_padding = '  ' * level
             print(
-                f"{level_padding}0x{offset:04x}:  {formatted_line} {padding}{ascii_repr}")
+                f"{level_padding}0x{offset:04x}:  "
+                f"{formatted_line} {padding}{ascii_repr}")

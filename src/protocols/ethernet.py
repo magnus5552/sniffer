@@ -25,10 +25,10 @@ class EthernetPacket:
             ip_packet.parse(higher_level_data)
             self.higher_level_packet = ip_packet
 
-    def show(self, ts_sec, ts_usec, verbose):
+    def show(self, ts_sec, verbose):
         if not self.higher_level_packet:
             return
-        self.higher_level_packet.show(ts_sec, ts_usec, 0, verbose)
+        self.higher_level_packet.show(ts_sec, 0, verbose)
 
 
 
