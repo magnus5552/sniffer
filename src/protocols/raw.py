@@ -4,7 +4,7 @@ import dataclasses
 @dataclasses.dataclass
 class RawPacket:
     payload = None
-    filter_name = 'row'
+    filter_name = 'raw'
 
     def parse(self, packet):
         self.payload = packet

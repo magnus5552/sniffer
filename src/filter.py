@@ -7,19 +7,25 @@ class Filter:
     @staticmethod
     def filter(packet: EthernetPacket, filter_expr: str):
         pair = filter_expr.split('==', 1)
-        if len(pair) == 1:
+        key = pair[0].strip()
+        packet_pair = key.split('.', 1)
+        packet_name = packet_pair[0]
+
+        if (len(pair) == 2 and len(packet_pair) == 1
+                or len(pair) == 1 and len(packet_pair) == 2):
             print("Wrong filter")
             sys.exit(1)
-        key, value = pair[0].strip(), pair[1].strip()
-        packet_name, packet_field = key.split('.', 1)
+
+        value = pair[1].strip() if len(pair) > 1 else None
+        packet_field = packet_pair[1] if len(packet_pair) > 1 else None
 
         while packet.filter_name != packet_name:
             packet = packet.higher_level_packet
 
-            if not packet or packet.filter_name == 'row':
+            if not packet or packet.filter_name == 'raw':
                 return False
 
-        if str(getattr(packet, packet_field, None)) != value:
+        if packet_field and str(getattr(packet, packet_field, None)) != value:
             return False
 
         return True
