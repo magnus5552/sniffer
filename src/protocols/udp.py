@@ -1,6 +1,6 @@
 import dataclasses
 import struct
-from raw import RawPacket
+from .raw import RawPacket
 
 
 @dataclasses.dataclass

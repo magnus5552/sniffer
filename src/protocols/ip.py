@@ -3,8 +3,9 @@ import socket
 import struct
 from datetime import datetime
 
-from tcp import TcpPacket
-from udp import UdpPacket
+from .raw import RawPacket
+from .tcp import TcpPacket
+from .udp import UdpPacket
 
 
 ETH_TYPE_IP = 0x0008  # Тип пакета IP
@@ -26,6 +27,10 @@ class BaseIPPacket:
             udp_packet = UdpPacket()
             udp_packet.parse(packet_data)
             self.higher_level_packet = udp_packet
+        else:
+            raw_packet = RawPacket()
+            raw_packet.parse(packet_data)
+            self.higher_level_packet = raw_packet
 
     def show(self, ts_sec, level, verbose):
         level_padding = '  ' * level
@@ -35,18 +40,17 @@ class BaseIPPacket:
 
         src_ip = self.src_ip
         dst_ip = self.dst_ip
-        if self.higher_level_packet:
+        if not isinstance(self.higher_level_packet, RawPacket):
             src_ip += f'.{self.higher_level_packet.src_port}:'
             dst_ip += f'.{self.higher_level_packet.dst_port}:'
 
-        print(f"{level_padding}{date_str} "
-              f"IPv{self.version} {src_ip} > {dst_ip} ", end='')
+        show_string = (f"{level_padding}{date_str} "
+                       f"IPv{self.version} {src_ip} > {dst_ip} ")
 
-        if not self.higher_level_packet:
-            print()
-            return
-        print(f"{self.higher_level_packet.name}, "
-              f"length {self.higher_level_packet.length}")
+        if not isinstance(self.higher_level_packet, RawPacket):
+            show_string += (f"{self.higher_level_packet.name}, "
+                            f"length {self.higher_level_packet.length}")
+        print(show_string)
         if verbose:
             self.higher_level_packet.show(level + 1)
 

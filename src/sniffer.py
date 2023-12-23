@@ -1,15 +1,15 @@
 import os
-import sys
-import struct
 import socket
+import struct
+import sys
 import time
 
 from cmd_parser import configure_parser
+from filter import Filter
 from protocols.ethernet import EthernetPacket
-from protocols.ip import IpPacket, Ipv6Packet, BaseIPPacket
+from protocols.ip import IpPacket, Ipv6Packet
 from protocols.tcp import TcpPacket
 from protocols.udp import UdpPacket
-from filter import Filter
 
 ETH_P_ALL = 0x0003  # Захватывать все пакеты
 
