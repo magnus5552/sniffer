@@ -23,16 +23,16 @@ def main():
         for class_type in classes:
             Filter.list_filter(class_type)
         return
-    sniff(args.interface, args.verbose, args.filter_expr)
+    sniff(args.interface, args.verbose, args.filter_expr, args.filename)
 
 
-def sniff(interface, verbose, filter_expr):
+def sniff(interface, verbose, filter_expr, filename):
     # Создаем RAW сокет для захвата пакетов
     sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW,
                          socket.htons(ETH_P_ALL))
 
     # Открываем файл pcap для записи
-    pcap_file = open('capture.pcap', 'wb')
+    pcap_file = open(filename + '.pcap', 'wb')
     if interface != 'any':
         sock.bind((interface, 0))
     # Записываем файл заголовка pcap
@@ -91,6 +91,7 @@ def write_packet_to_pcap(pcap_file, packet, ts_sec, ts_usec):
 
 if __name__ == '__main__':
     if os.geteuid() != 0:
-        print("This script requires root privileges to capture network traffic.")
+        print("This script requires root privileges "
+              "to capture network traffic.")
         sys.exit(1)
     main()
