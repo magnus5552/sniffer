@@ -1,17 +1,18 @@
+import dataclasses
 import struct
 import socket
 
-from .ip import IpPacket, ETH_TYPE_IP
+from ip import IpPacket, ETH_TYPE_IP
 
 
+@dataclasses.dataclass
 class EthernetPacket:
-    def __init__(self, src_mac=None, dst_mac=None, eth_type=None,
-                 higher_level_packet=None):
-        self.src_mac = src_mac
-        self.dst_mac = dst_mac
-        self.eth_type = eth_type
-        self.higher_level_packet = higher_level_packet
-        self.name = 'Ethernet'
+    src_mac = None
+    dst_mac = None
+    eth_type = None
+    higher_level_packet = None
+    name = 'Ethernet'
+    filter_name = 'eth'
 
     def parse(self, packet):
         eth_header = struct.unpack('!6s6sH', packet[:14])
@@ -29,7 +30,6 @@ class EthernetPacket:
         if not self.higher_level_packet:
             return
         self.higher_level_packet.show(ts_sec, 0, verbose)
-
 
 
 def format_mac_addr(mac_addr):

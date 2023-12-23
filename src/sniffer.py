@@ -6,16 +6,27 @@ import time
 
 from cmd_parser import configure_parser
 from protocols.ethernet import EthernetPacket
+from protocols.ip import IpPacket, Ipv6Packet, BaseIPPacket
+from protocols.tcp import TcpPacket
+from protocols.udp import UdpPacket
+from filter import Filter
 
 ETH_P_ALL = 0x0003  # Захватывать все пакеты
+
+classes = [EthernetPacket, IpPacket, Ipv6Packet, TcpPacket, UdpPacket]
 
 
 def main():
     parser = configure_parser()
     args = parser.parse_args()
-    sniff(args.interface, args.verbose)
+    if args.show_filter_list:
+        for class_type in classes:
+            Filter.list_filter(class_type)
+        return
+    sniff(args.interface, args.verbose, args.filter_expr)
 
-def sniff(interface, verbose):
+
+def sniff(interface, verbose, filter_expr):
     # Создаем RAW сокет для захвата пакетов
     sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW,
                          socket.htons(ETH_P_ALL))
@@ -38,6 +49,9 @@ def sniff(interface, verbose):
 
             eth_packet = EthernetPacket()
             eth_packet.parse(packet)
+            if filter_expr:
+                if not evaluate_filter(eth_packet, filter_expr):
+                    continue
             eth_packet.show(ts_sec, verbose)
 
             # Записываем пакет в pcap файл
@@ -48,6 +62,19 @@ def sniff(interface, verbose):
         pcap_file.close()
         print("Capture stopped.")
         sys.exit(0)
+
+
+def evaluate_filter(eth_packet, filter_expr):
+
+    # Разбиваем выражение фильтрации на части
+    parts = filter_expr.split()
+
+    # Применяем условия фильтрации на внутренний пакет Ethernet
+    for part in parts:
+        if not Filter.filter(eth_packet, part):
+            return False
+
+    return True
 
 
 def write_pcap_file_header(pcap_file):

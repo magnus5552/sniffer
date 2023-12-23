@@ -1,24 +1,23 @@
+import dataclasses
 import struct
+from raw import RawPacket
 
-from .raw import RawPacket
 
+@dataclasses.dataclass
 class TcpPacket:
-    def __init__(self, source_port=None, destination_port=None,
-                 sequence_number=None, acknowledgment_number=None,
-                 data_offset=None, flags=None, window=None, checksum=None,
-                 urgent_pointer=None, higher_level_packet=None, length=None):
-        self.src_port = source_port
-        self.dst_port = destination_port
-        self.seq_num = sequence_number
-        self.ack_num = acknowledgment_number
-        self.data_offset = data_offset
-        self.flags = flags
-        self.window = window
-        self.checksum = checksum
-        self.urgent = urgent_pointer
-        self.higher_level_packet = higher_level_packet
-        self.name = 'TCP'
-        self.length = length
+    src_port = None
+    dst_port = None
+    seq_num = None
+    ack_num = None
+    data_offset = None
+    flags = None
+    window = None
+    checksum = None
+    urgent = None
+    higher_level_packet = None
+    name = 'TCP'
+    length = None
+    filter_name = 'tcp'
 
     def parse(self, packet):
         tcp_header = struct.unpack('!HHLLBBHHH', packet[:20])
@@ -31,7 +30,8 @@ class TcpPacket:
         self.window = tcp_header[6]
         self.checksum = tcp_header[7]
         self.urgent = tcp_header[8]
-        self.higher_level_packet = RawPacket(packet[20:])
+        self.higher_level_packet = RawPacket()
+        self.higher_level_packet.parse(packet[20:])
         self.length = len(packet[20:])
 
     def show(self, level):

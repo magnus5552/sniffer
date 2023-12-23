@@ -12,7 +12,7 @@ def configure_parser():
                         dest='debug')
     parser.add_argument('-v', '--verbose', action='store_true',
                         dest='verbose')
-    parser.add_argument('--filter', dest='filter_exr')
+    parser.add_argument('--filter', dest='filter_expr')
     parser.add_argument('-l', '--filter-list', action='store_true',
                         dest='show_filter_list')
     return parser

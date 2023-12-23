@@ -1,21 +1,21 @@
+import dataclasses
 import socket
 import struct
 from datetime import datetime
 
-from .tcp import TcpPacket
-from .udp import UdpPacket
+from tcp import TcpPacket
+from udp import UdpPacket
 
 
 ETH_TYPE_IP = 0x0008  # Тип пакета IP
 
 
 class BaseIPPacket:
-    def __init__(self, version=None, src_ip=None, dst_ip=None,
-                 higher_level_packet=None):
-        self.version = version
-        self.src_ip = src_ip
-        self.dst_ip = dst_ip
-        self.higher_level_packet = higher_level_packet
+    version = None
+    src_ip = None
+    dst_ip = None
+    higher_level_packet = None
+    filter_name = 'ip'
 
     def check_higher_level_protocol(self, packet_data, protocol):
         if protocol == socket.IPPROTO_TCP:
@@ -51,14 +51,12 @@ class BaseIPPacket:
             self.higher_level_packet.show(level + 1)
 
 
+@dataclasses.dataclass
 class IpPacket(BaseIPPacket):
-    def __init__(self, version=None, ihl=None, ttl=None, protocol=None,
-                 src_ip=None, dst_ip=None, higher_level_packet=None):
-        super().__init__(version, src_ip, dst_ip, higher_level_packet)
-        self.ihl = ihl
-        self.ttl = ttl
-        self.protocol = protocol
-        self.name = 'IP'
+    ihl = None
+    ttl = None
+    protocol = None
+    name = 'IP'
 
     def parse(self, packet):
         ip_header = struct.unpack('!BBHHHBBH4s4s', packet[:20])
@@ -74,17 +72,13 @@ class IpPacket(BaseIPPacket):
         self.check_higher_level_protocol(packet[self.ihl:], self.protocol)
 
 
+@dataclasses.dataclass
 class Ipv6Packet(BaseIPPacket):
-    def __init__(self, version=None, traffic_class=None, flow_label=None,
-                 payload_length=None, next_header=None, hop_limit=None,
-                 src_ip=None, dst_ip=None, higher_level_packet=None):
-        super().__init__(version, src_ip, dst_ip, higher_level_packet)
-        self.traffic_class = traffic_class
-        self.flow_label = flow_label
-        self.payload_length = payload_length
-        self.next_header = next_header
-        self.hop_limit = hop_limit
-
+    traffic_class = None
+    flow_label = None
+    payload_length = None
+    next_header = None
+    hop_limit = None
 
     def parse(self, packet_data):
         version_tc_flow = struct.unpack('!I', packet_data[:4])[0]

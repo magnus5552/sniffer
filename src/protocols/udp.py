@@ -1,16 +1,17 @@
+import dataclasses
 import struct
+from raw import RawPacket
 
-from .raw import RawPacket
 
+@dataclasses.dataclass
 class UdpPacket:
-    def __init__(self, source_port=None, destination_port=None, length=None,
-                 checksum=None, higher_level_packet=None):
-        self.src_port = source_port
-        self.dst_port = destination_port
-        self.length = length
-        self.checksum = checksum
-        self.higher_level_packet = higher_level_packet
-        self.name = 'UDP'
+    src_port = None
+    dst_port = None
+    length = None
+    checksum = None
+    higher_level_packet = None
+    name = 'UDP'
+    filter_name = 'udp'
 
     def parse(self, packet):
         udp_header = struct.unpack('!HHHH', packet[:8])
@@ -18,7 +19,8 @@ class UdpPacket:
         self.dst_port = udp_header[1]
         self.length = udp_header[2]
         self.checksum = udp_header[3]
-        self.higher_level_packet = RawPacket(packet[8:])
+        self.higher_level_packet = RawPacket()
+        self.higher_level_packet.parse(packet[8:])
 
     def show(self, level):
         level_padding = '  ' * level

@@ -1,6 +1,10 @@
+import dataclasses
+
+
+@dataclasses.dataclass
 class RawPacket:
-    def __init__(self, payload = None):
-        self.payload = payload
+    payload = None
+    filter_name = 'row'
 
     def parse(self, packet):
         self.payload = packet
