@@ -7,7 +7,7 @@ def configure_parser():
                         default='any',
                         help='network interface (default: any)')
     parser.add_argument('-f', '--file', dest='filename',
-                        default='capture.pcap',
+                        default='capture',
                         help='path to .pcap file')
     parser.add_argument('-v', '--verbose', action='store_true',
                         dest='verbose',
