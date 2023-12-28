@@ -31,7 +31,7 @@ def main():
 
 def sniff(interface, verbose, filter_expr, filename, report, dest_path):
     start_time = time.time()
-    report_data = defaultdict(lambda :(0, 0))
+    report_data = defaultdict(lambda: (0, 0))
     # Создаем RAW сокет для захвата пакетов
     sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW,
                          socket.htons(ETH_P_ALL))
@@ -90,8 +90,8 @@ def evaluate_filter(eth_packet, filter_expr):
 
 def write_pcap_file_header(pcap_file):
     # Заголовок файла pcap
-    pcap_file.write(struct.pack('IHHIIII', 0xa1b2c3d4, 2
-                                , 4, 0, 0, 65535, 1))
+    pcap_file.write(struct.pack('IHHIIII', 0xa1b2c3d4, 2,
+                                4, 0, 0, 65535, 1))
 
 
 def write_packet_to_pcap(pcap_file, packet, ts_sec, ts_usec):

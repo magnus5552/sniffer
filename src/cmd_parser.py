@@ -22,6 +22,6 @@ def configure_parser():
     parser.add_argument('-r', '--report', action="store_true",
                         dest='make_report',
                         help='make report after program finish')
-    parser.add_argument('-d', default = '', dest="dest_path",
+    parser.add_argument('-d', default='', dest="dest_path",
                         help='destination path to report')
     return parser
