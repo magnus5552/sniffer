@@ -7,11 +7,11 @@ import time
 from cmd_parser import configure_parser
 from filter import Filter
 from protocols.ethernet import EthernetPacket
-from protocols.ip import IpPacket, Ipv6Packet
+from protocols.ip import IpPacket, Ipv6Packet, BaseIPPacket
 from protocols.tcp import TcpPacket
 from protocols.udp import UdpPacket
 from collections import defaultdict
-from ReportMaker import ReportMaker
+from report_maker import make_report
 
 ETH_P_ALL = 0x0003  # Захватывать все пакеты
 
@@ -29,7 +29,7 @@ def main():
           args.make_report, args.dest_path)
 
 
-def sniff(interface, verbose, filter_expr, filename, make_report, dest_path):
+def sniff(interface, verbose, filter_expr, filename, report, dest_path):
     start_time = time.time()
     report_data = defaultdict(lambda :(0, 0))
     # Создаем RAW сокет для захвата пакетов
@@ -57,10 +57,10 @@ def sniff(interface, verbose, filter_expr, filename, make_report, dest_path):
             if filter_expr:
                 if not evaluate_filter(eth_packet, filter_expr):
                     continue
-
-            host_ip = eth_packet.higher_level_packet.src_ip
-            report_data[host_ip] = (report_data[host_ip][0] + len(packet),
-                                    report_data[host_ip][1] + 1)
+            if isinstance(eth_packet.higher_level_packet, BaseIPPacket):
+                host_ip = eth_packet.higher_level_packet.src_ip
+                report_data[host_ip] = (report_data[host_ip][0] + len(packet),
+                                        report_data[host_ip][1] + 1)
             eth_packet.show(ts_sec, verbose)
             # Записываем пакет в pcap файл
             write_packet_to_pcap(pcap_file, packet, ts_sec, ts_usec)
@@ -69,9 +69,8 @@ def sniff(interface, verbose, filter_expr, filename, make_report, dest_path):
         # Закрываем файл при остановке программы
         end_time = time.time()
         pcap_file.close()
-        if make_report:
-            ReportMaker.make_report(report_data, start_time,
-                                    end_time, dest_path)
+        if report:
+            make_report(report_data, start_time, end_time, dest_path)
         print("Capture stopped.")
         sys.exit(0)
 
@@ -107,7 +106,4 @@ if __name__ == '__main__':
         print("This script requires root privileges "
               "to capture network traffic.")
         sys.exit(1)
-    try:
-        main()
-    except:
-        print('loh')
+    main()
