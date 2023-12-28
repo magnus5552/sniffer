@@ -19,4 +19,9 @@ def configure_parser():
     parser.add_argument('-l', '--filter-list', action='store_true',
                         dest='show_filter_list',
                         help='available protocols and headers to filter')
+    parser.add_argument('-r', '--report', action="store_true",
+                        dest='make_report',
+                        help='make report after program finish')
+    parser.add_argument('-d', default = '', dest="dest_path",
+                        help='destination path to report')
     return parser

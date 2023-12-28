@@ -10,6 +10,8 @@ from protocols.ethernet import EthernetPacket
 from protocols.ip import IpPacket, Ipv6Packet
 from protocols.tcp import TcpPacket
 from protocols.udp import UdpPacket
+from collections import defaultdict
+from ReportMaker import ReportMaker
 
 ETH_P_ALL = 0x0003  # Захватывать все пакеты
 
@@ -23,10 +25,13 @@ def main():
         for class_type in classes:
             Filter.list_filter(class_type)
         return
-    sniff(args.interface, args.verbose, args.filter_expr, args.filename)
+    sniff(args.interface, args.verbose, args.filter_expr, args.filename,
+          args.make_report, args.dest_path)
 
 
-def sniff(interface, verbose, filter_expr, filename):
+def sniff(interface, verbose, filter_expr, filename, make_report, dest_path):
+    start_time = time.time()
+    report_data = defaultdict(lambda :(0, 0))
     # Создаем RAW сокет для захвата пакетов
     sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW,
                          socket.htons(ETH_P_ALL))
@@ -52,14 +57,21 @@ def sniff(interface, verbose, filter_expr, filename):
             if filter_expr:
                 if not evaluate_filter(eth_packet, filter_expr):
                     continue
-            eth_packet.show(ts_sec, verbose)
 
+            host_ip = eth_packet.higher_level_packet.src_ip
+            report_data[host_ip] = (report_data[host_ip][0] + len(packet),
+                                    report_data[host_ip][1] + 1)
+            eth_packet.show(ts_sec, verbose)
             # Записываем пакет в pcap файл
             write_packet_to_pcap(pcap_file, packet, ts_sec, ts_usec)
 
     except KeyboardInterrupt:
         # Закрываем файл при остановке программы
+        end_time = time.time()
         pcap_file.close()
+        if make_report:
+            ReportMaker.make_report(report_data, start_time,
+                                    end_time, dest_path)
         print("Capture stopped.")
         sys.exit(0)
 
@@ -79,7 +91,8 @@ def evaluate_filter(eth_packet, filter_expr):
 
 def write_pcap_file_header(pcap_file):
     # Заголовок файла pcap
-    pcap_file.write(struct.pack('IHHIIII', 0xa1b2c3d4, 2, 4, 0, 0, 65535, 1))
+    pcap_file.write(struct.pack('IHHIIII', 0xa1b2c3d4, 2
+                                , 4, 0, 0, 65535, 1))
 
 
 def write_packet_to_pcap(pcap_file, packet, ts_sec, ts_usec):
@@ -94,4 +107,7 @@ if __name__ == '__main__':
         print("This script requires root privileges "
               "to capture network traffic.")
         sys.exit(1)
-    main()
+    try:
+        main()
+    except:
+        print('loh')
